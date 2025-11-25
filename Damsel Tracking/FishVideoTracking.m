@@ -108,17 +108,83 @@ title('Y coord & smooth for Post');
 
 %% Apply mask to filter out anomalous points - by considering the plot above
 
-%% Visualise the filtered points (red = masked out, green = correct) - view the points with video to check
+distance = 50; %distance to change - unsure what unit needed right now
 
-%% Apply smoothing to filterred and tracked points
+for fN = 1:2 % If absolute difference between raw track and smoothed is less than 'distance' for both X and Y coords == TRUE
+maskCorrections = abs(trajectories{fN}(:, 1) - traj_sm{fN}(:, 1)) < distance & abs(trajectories{fN}(:, 2) - traj_sm{fN}(:, 2)) < distance;
+switch fN
+    case (1) % Save 1's and 0's from mask to another column in table to then use for colour coding visualisation
+        RawTrajectoryPre.mask = maskCorrections;
+    case (2)
+        RawTrajectoryPost.mask = maskCorrections;
+end
+end
+
+%% ASK SAM HELP - Visualise the filtered points (red = masked out, green = correct) - view the points with video to check
+
+% Change FALSE values from mask to Nan values
+
+RawTrajectoryPre{:,1}(~RawTrajectoryPre.mask) = NaN; 
+RawTrajectoryPre{:,2}(~RawTrajectoryPre.mask) = NaN; 
+RawTrajectoryPost{:,1}(~RawTrajectoryPost.mask) = NaN; 
+RawTrajectoryPost{:,2}(~RawTrajectoryPost.mask) = NaN;
+
+%% Apply smoothing to filterred and tracked points (is transposing a problem here???)
+
+SmoothPre = resmoothFishTraj(RawTrajectoryPre{:,[1,2]},constant);
+SmoothPost = resmoothFishTraj(RawTrajectoryPost{:,[1,2]},constant);
 
 %% Obtain raw track that is sampled 1 in 10 frames instead of in each
 
+H1 = height(RawTrajectoryPre);
+OneInTenPre = RawTrajectoryPre(1:10:H1);
+
+H2 = height(RawTrajectoryPost);
+OneInTenPost = RawTrajectoryPost(1:10:H2);
+
 %% Plot filtered raw trajectory points, smoothing line, and 1 in 10 frame sampled track - to check smoothing parameter choice
+
+figure; %plot x, pre
+subplot(2,2,1);
+scatter(RawTrajectoryPre{:,5}, RawTrajectoryPre{:,1}, 10, 'green');
+hold on;
+scatter(OneInTenPre{:,5}, OneInTenPre{:,1}, 10, 'red');
+hold on;
+plot(RawTrajectoryPre{:,5},SmoothPre{:,1},'color','w');
+title('X coord & smooth for Pre');
+
+subplot(2,2,1); %plot y, pre
+scatter(RawTrajectoryPre{:,5}, RawTrajectoryPre{:,2}, 10, 'green');
+hold on;
+scatter(OneInTenPre{:,5}, OneInTenPre{:,2}, 10, 'red');
+hold on;
+plot(RawTrajectoryPre{:,5},SmoothPre{:,2},'color','w');
+title('Y coord & smooth for Pre');
+
+subplot(2,2,3); %plot x, post
+scatter(RawTrajectoryPost{:,5}, RawTrajectoryPost{:,1}, 10, 'green');
+hold on;
+scatter(OneInTenPost{:,5}, OneInTenPost{:,1}, 10, 'red');
+hold on;
+plot(RawTrajectoryPost{:,5},SmoothPost{:,1},'color','w');
+title('X coord & smooth for Post');
+
+subplot(2,2,4); %plot y, post
+scatter(RawTrajectoryPost{:,5}, RawTrajectoryPost{:,2}, 10, 'green');
+hold on;
+scatter(OneInTenPost{:,5}, OneInTenPost{:,2}, 10, 'red');
+hold on;
+plot(RawTrajectoryPost{:,5},SmoothPost{:,2},'color','w');
+title('Y coord & smooth for Post');
+
+
+%% ASK SAM HELP - there are missing points 'Nan' in the X and Y smooth line too - might be an issue for stats, any suggestions?
 
 %% Save the filtered, smoothed data points = for stats use
 
+writetable(SmoothPre,'smoothPre.csv');
+writetable(SmoothPost,'smoothPost.csv');
 
-%% ASK SAM HELP - Add corrections - lense distortion, defraction etc to points - to correct the final coords.
+%% ASK SAM HELP - Add corrections - lense distortion, refraction etc to points - to correct the final coords.
 
 %% FOR LATER - How to combine both L and R cameras coords to one set only 
